@@ -9,13 +9,13 @@ It features a green ASCII art banner at startup and supports executing external 
 
 - Startup banner in green ASCII art:
 ```      __  ___      _____ __         ____
-      /  |/  /_  __/ ___// /_  ___  / / /
-     / /|_/ / / / /\__ \/ __ \/ _ \/ / / 
-    / /  / / /_/ /___/ / / / /  __/ / /  
-   /_/  /_/\__, //____/_/ /_/\___/_/_/   
-       /____/                         
+        /  |/  /_  __/ ___// /_  ___  / / /
+       / /|_/ / / / /\__ \/ __ \/ _ \/ / / 
+      / /  / / /_/ /___/ / / / /  __/ / /  
+     /_/  /_/\__, //____/_/ /_/\___/_/_/   
+            /____/                         
 
-           by Martin Liarte
+                  by Martin Liarte
 ```
 
 - Built-in command:
