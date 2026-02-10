@@ -51,7 +51,14 @@ git clone https://github.com/MartinLiarte/MyShell.git
 cd MyShell
 ```
 
-2. Compile with gcc:
+2. Compile:
+
+ - Using MakeFile (recommended):
+ 
+```bash
+make
+```
+- Or manually with GCC:
 
 ```bash
 gcc -Wall -Wextra -std=c99 MyShell.c -o myshell
@@ -62,3 +69,50 @@ gcc -Wall -Wextra -std=c99 MyShell.c -o myshell
 ```bash
 ./myshell
 ```
+---
+
+## Debugging
+
+If you want a debug build with symbols for gdb:
+
+```bash
+make debug
+./myshell
+```
+---
+
+## Cleaning up
+
+```bash
+make clean
+```
+Removes the compiled binary.
+
+---
+
+## Example Usage
+
+```bash
+MyShell(Desktop)> pwd
+/Users/username/Desktop
+
+MyShell(Desktop)> cd ..
+MyShell(Desktop)> pwd
+/Users/username
+
+MyShell(Desktop)> clear
+
+MyShell(Desktop)> exit
+```
+---
+## Notes
+
+Temporary files like ~$filename.docx created by Word may appear in the directory when listing files. These are normal and can be safely ignored.
+
+This shell is intended for learning and demonstration purposes. It’s a great way to practice system programming in C.
+
+---
+
+## Author
+
+Martin Liarte
