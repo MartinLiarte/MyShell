@@ -19,10 +19,26 @@ It features a green ASCII art banner at startup and supports executing external 
                   by Martin Liarte
 ```
 
-- Built-in command:
-- `exit` → exit the shell
-- Support for **external system commands** (`ls`, `pwd`, `echo`, `cat`, etc.)
-- Ignores empty input lines
+- **Built-in commands:**
+  - `cd [dir]` — change directory (supports `cd -` to go to previous directory)
+  - `pwd` — print the current working directory
+  - `clear` — clear the terminal
+  - `exit` — exit the shell
+- **Dynamic prompt:** Shows the current folder name, e.g., `MyShell(Desktop)>`
+- **External commands:** Executes system commands using `fork()` and `execvp()`
+- **Environment variable expansion:** Supports `$VAR` style variables (e.g., `$HOME`, `$PATH`)
+
+---
+
+## Limitations
+
+- Environment variable expansion only works if the argument is **exactly `$VAR`**
+- No support yet for:
+  - Pipes (`|`)
+  - Redirections (`>`, `<`)
+  - Shell scripting
+  - Tab autocompletion
+  - Does not expand `~` to `$HOME` automatically (can be added later)
 
 ---
 
@@ -38,7 +54,7 @@ cd MyShell
 2. Compile with gcc:
 
 ```bash
-gcc MyShell.c -o myshell
+gcc -Wall -Wextra -std=c99 MyShell.c -o myshell
 ```
 
 3. Run:
