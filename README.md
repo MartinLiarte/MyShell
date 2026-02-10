@@ -31,7 +31,7 @@ It features a green ASCII art banner at startup and supports executing external 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your_username/MyShell.git
+git clone https://github.com/MartinLiarte/MyShell.git
 cd MyShell
 ```
 
