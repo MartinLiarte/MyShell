@@ -38,7 +38,7 @@ cd MyShell
 2. Compile with gcc:
 
 ```bash
-gcc MyShell.c -o myshell
+gcc shell.c -o myshell
 ```
 
 3. Run:
