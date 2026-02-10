@@ -34,7 +34,7 @@ git clone https://github.com/your_username/MyShell.git
 cd MyShell
 ```
 
-2.Compile with gcc:
+2. Compile with gcc:
 
 ```bash
 gcc MyShell.c -o myshell
