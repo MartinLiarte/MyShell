@@ -8,7 +8,8 @@ It features a green ASCII art banner at startup and supports executing external 
 ## Features
 
 - Startup banner in green ASCII art:
-```      __  ___      _____ __         ____
+```
+         __  ___      _____ __         ____
         /  |/  /_  __/ ___// /_  ___  / / /
        / /|_/ / / / /\__ \/ __ \/ _ \/ / / 
       / /  / / /_/ /___/ / / / /  __/ / /  
