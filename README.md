@@ -38,7 +38,6 @@ It features a green ASCII art banner at startup and supports executing external 
   - Redirections (`>`, `<`)
   - Shell scripting
   - Tab autocompletion
-  - Does not expand `~` to `$HOME` automatically (can be added later)
 
 ---
 
