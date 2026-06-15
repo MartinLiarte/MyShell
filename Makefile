@@ -1,38 +1,36 @@
-# ------------------------------
-# MyShell Makefile
-# ------------------------------
+CC      = gcc
+CFLAGS  = -Wall -Wextra -Wpedantic -std=c11 -g
+TARGET  = myshell
+SRC     = myshell.c
 
-# Compiler
-CC = gcc
+# ── Detect readline flavour ───────────────────────────────────────────────
+# On macOS, prefer Homebrew's GNU readline if available; fall back to libedit.
+# On Linux, plain -lreadline links GNU readline.
 
-# Compilation flags
-CFLAGS = -Wall -Wextra -std=c99
+UNAME := $(shell uname)
 
-# Debug flags
-DEBUGFLAGS = -g -Wall -Wextra -std=c99
+ifeq ($(UNAME), Darwin)
+    # Try Homebrew GNU readline first (arm64 and x86_64 paths)
+    BREW_RL := $(shell brew --prefix readline 2>/dev/null)
+    ifneq ($(BREW_RL),)
+        CFLAGS  += -I$(BREW_RL)/include -DHAVE_RL_REPLACE_LINE
+        LDFLAGS  = -L$(BREW_RL)/lib -lreadline
+    else
+        # Fall back to Apple's libedit (no rl_replace_line, no history_list)
+        LDFLAGS  = -lreadline
+    endif
+else
+    # Linux / other POSIX – assume GNU readline
+    CFLAGS  += -DHAVE_RL_REPLACE_LINE
+    LDFLAGS  = -lreadline
+endif
 
-# Executable name
-TARGET = myshell
+.PHONY: all clean
 
-# Source files
-SRC = MyShell.c
-
-# ------------------------------
-# Default rule: build executable
-# ------------------------------
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# ------------------------------
-# Debug build
-# ------------------------------
-debug: CFLAGS += $(DEBUGFLAGS)
-debug: clean $(TARGET)
-
-# ------------------------------
-# Clean up
-# ------------------------------
 clean:
 	rm -f $(TARGET)
