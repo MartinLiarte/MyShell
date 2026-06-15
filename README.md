@@ -1,7 +1,6 @@
-# MyShell
+# MyShell - Unix Shell in C
 
-**MyShell** is a custom shell written in C as a personal project.  
-It features a green ASCII art banner at startup and supports executing external system commands.
+**MyShell** is a feature-rich, custom Unix shell written in C as a systems programming project. It bridges the gap between a basic command interpreter and a production-ready shell by leveraging POSIX system calls, advanced tokenization, and the `GNU Readline` library.
 
 ---
 
@@ -19,65 +18,58 @@ It features a green ASCII art banner at startup and supports executing external 
                   by Martin Liarte
 ```
 
-- **Built-in commands:**
-  - `cd [dir]` — change directory (supports `cd -` to go to previous directory)
-  - `pwd` — print the current working directory
-  - `clear` — clear the terminal
-  - `exit` — exit the shell
-- **Dynamic prompt:** Shows the current folder name, e.g., `MyShell(Desktop)>`
-- **External commands:** Executes system commands using `fork()` and `execvp()`
-- **Environment variable expansion:** Supports `$VAR` style variables (e.g., `$HOME`, `$PATH`)
+* **Interactive Command Line:** Powered by `readline` with full support for navigation, **Tab autocompletion**, and persistent command history.
+* **Pipelines (`|`):** Supports chaining multiple commands (up to 16 stages) to redirect the output of one command into the input of the next.
+* **I/O Redirection:** Fully supports input redirection (`<`), output redirection (`>`), and append mode (`>>`).
+* **Quote-Aware Tokenizer:** A robust state-machine parser that correctly handles arguments enclosed in single (`'`) and double (`"`) quotes, preserving spaces.
+* **Intelligent Expansion:**
+  * Expands environment variables (e.g., `$USER`, `$PATH`) inline, even inside double quotes.
+  * Supports tilde (`~`) expansion to the user's `$HOME` directory.
+* **Asynchronous Execution:** Supports running processes in the background using the trailing `&` operator, with safe zombie process cleanup (`SIGCHLD` handling).
+* **Built-in Commands:**
+  * `cd [dir]` — Changes directory (supports `cd -` to toggle to the previous directory).
+  * `pwd` — Prints the current working directory.
+  * `echo [-n]` — Prints text to stdout (with optional newline suppression).
+  * `export VAR=val` — Sets environment variables.
+  * `env` — Lists all current environment variables.
+  * `history` — Shows the session's command history.
+  * `clear` — Clears the terminal screen.
+  * `exit [code]` — Terminate the shell cleanly.
 
 ---
 
-## Limitations
+## Cross-Platform Installation
 
-- Environment variable expansion only works if the argument is **exactly `$VAR`**
-- No support yet for:
-  - Pipes (`|`)
-  - Redirections (`>`, `<`)
-  - Shell scripting
-  - Tab autocompletion
+The project includes a multi-platform `Makefile` that automatically detects your OS and correctly configures `readline` (including Homebrew paths on macOS).
 
----
-
-## Installation
-
-1. Clone the repository:
-
+### 1. Clone the repository
 ```bash
-git clone https://github.com/MartinLiarte/MyShell.git
+git clone [https://github.com/MartinLiarte/MyShell.git](https://github.com/MartinLiarte/MyShell.git)
 cd MyShell
 ```
 
-2. Compile:
-
- - Using MakeFile (recommended):
- 
+### 2. Compile
+Using `make` is highly recommended as it handles platform-specific linking:
 ```bash
 make
 ```
-- Or manually with GCC:
 
+*(Optional)* If you want to compile manually using GCC, you **must** link the readline library:
 ```bash
-gcc -Wall -Wextra -std=c99 MyShell.c -o myshell
+gcc -Wall -Wextra -Wpedantic -std=c11 myshell.c -o myshell -lreadline
 ```
 
-3. Run:
-
+### 3. Run
 ```bash
 ./myshell
 ```
 ---
+## Technical Details & Limitations
 
-## Debugging
-
-If you want a debug build with symbols for gdb:
-
-```bash
-make debug
-./myshell
-```
+To maintain architectural simplicity, certain static thresholds are set:
+* **Argument Limit:** Maximum of 64 arguments per command (`MAX_ARGS`). Excess arguments are safely truncated with a warning.
+* **Pipeline Limit:** Maximum of 16 pipe stages per line (`MAX_PIPELINE`).
+* **Subshell Isolation Notice:** Parent-altering builtins (like `cd` or `export`) executed inside a pipeline or with I/O redirections will run inside a forked subshell, meaning their environment changes will not persist in the main shell session (a warning will notify you).
 ---
 
 ## Cleaning up
@@ -85,30 +77,26 @@ make debug
 ```bash
 make clean
 ```
-Removes the compiled binary.
+Removes the compiled binary and object files.
 
 ---
-
 ## Example Usage
 
 ```bash
-MyShell(Desktop)> pwd
-/Users/username/Desktop
+MyShell(Desktop)> echo "Hello world" > file.txt
+MyShell(Desktop)> cat file.txt | grep Hello
+Hello world
 
-MyShell(Desktop)> cd ..
-MyShell(Desktop)> pwd
-/Users/username
+MyShell(Desktop)> export PROJECT=MyShell
+MyShell(Desktop)> echo "Working on $PROJECT inside ~"
+Working on MyShell inside /Users/martin
 
-MyShell(Desktop)> clear
+MyShell(Desktop)> cd -
+/Users/martin/PreviousFolder
 
 MyShell(Desktop)> exit
+Bye!
 ```
----
-## Notes
-
-Temporary files like ~$filename.docx created by Word may appear in the directory when listing files. These are normal and can be safely ignored.
-
-This shell is intended for learning and demonstration purposes. It’s a great way to practice system programming in C.
 
 ---
 
