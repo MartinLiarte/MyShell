@@ -72,12 +72,16 @@ static char *build_prompt(void) {
     char *base = strrchr(cwd, '/');
     base = (base && base[1]) ? base + 1 : cwd;
 
+    /* Non-printing sequences must be wrapped in \001..\002 so readline
+       excludes them when computing the prompt width; otherwise line
+       editing and history navigation misplace the cursor. */
     size_t prompt_size = (size_t)PATH_MAX + 64;
     char  *prompt = malloc(prompt_size);
     if (!prompt) return strdup("$ ");
     snprintf(prompt, prompt_size,
-        CYAN BOLD "MyShell" RESET
-        "(" YELLOW "%s" RESET ")" BOLD ">" RESET " ",
+        "\001" CYAN BOLD "\002" "MyShell" "\001" RESET "\002"
+        "(" "\001" YELLOW "\002" "%s" "\001" RESET "\002" ")"
+        "\001" BOLD "\002" ">" "\001" RESET "\002" " ",
         base);
     return prompt;
 }
@@ -187,12 +191,14 @@ static char *expand_token(const char *tok) {
    QUOTE-AWARE TOKENISER
    ═══════════════════════════════════════════════════════════════════════════ */
 
-static int flush_token(char **buf, size_t *len, int *in_token,
+static int flush_token(char **buf, size_t *len, int *in_token, int *tilde_ok,
                        char *out[], int *ntok, int max_tok)
 {
     if (!*in_token) return 0;
     if (*ntok < max_tok) {
-        out[(*ntok)++] = expand_token(*buf);
+        /* Tilde expansion only applies when the word starts with an
+           unquoted '~' (same rule as bash). */
+        out[(*ntok)++] = *tilde_ok ? expand_token(*buf) : strdup(*buf);
     } else {
         fprintf(stderr, YELLOW
             "myshell: warning: argument list truncated (limit is %d)\n"
@@ -201,6 +207,7 @@ static int flush_token(char **buf, size_t *len, int *in_token,
     *len = 0;
     (*buf)[0] = '\0';
     *in_token = 0;
+    *tilde_ok = 0;
     return 1;
 }
 
@@ -212,7 +219,7 @@ static int tokenise(const char *s, char *out[], int max_tok) {
     size_t len = 0;
     buf[0] = '\0';
 
-    int in_single = 0, in_double = 0, in_token = 0;
+    int in_single = 0, in_double = 0, in_token = 0, tilde_ok = 0;
 
     while (*s) {
         char c = *s;
@@ -241,7 +248,7 @@ static int tokenise(const char *s, char *out[], int max_tok) {
         if (c == '"')  { in_double = 1; in_token = 1; s++; continue; }
 
         if (c == ' ' || c == '\t') {
-            flush_token(&buf, &len, &in_token, out, &ntok, max_tok);
+            flush_token(&buf, &len, &in_token, &tilde_ok, out, &ntok, max_tok);
             s++;
             continue;
         }
@@ -253,7 +260,7 @@ static int tokenise(const char *s, char *out[], int max_tok) {
         }
 
         if (c == '>' || c == '<') {
-            flush_token(&buf, &len, &in_token, out, &ntok, max_tok);
+            flush_token(&buf, &len, &in_token, &tilde_ok, out, &ntok, max_tok);
             const char *op = (c == '>' && *(s + 1) == '>') ? ">>"
                            : (c == '>'                     ? ">"
                                                            : "<");
@@ -269,6 +276,7 @@ static int tokenise(const char *s, char *out[], int max_tok) {
             continue;
         }
 
+        if (!in_token) tilde_ok = 1;
         buf_append(&buf, &len, &cap, c);
         in_token = 1;
         s++;
@@ -282,7 +290,7 @@ static int tokenise(const char *s, char *out[], int max_tok) {
         return -1;
     }
 
-    flush_token(&buf, &len, &in_token, out, &ntok, max_tok);
+    flush_token(&buf, &len, &in_token, &tilde_ok, out, &ntok, max_tok);
     free(buf);
     return ntok;
 }
@@ -290,7 +298,6 @@ static int tokenise(const char *s, char *out[], int max_tok) {
 static int split_on_pipe(char *line, char *segs[], int max_seg) {
     int   nseg      = 0;
     int   in_sq     = 0, in_dq = 0;
-    int   truncated = 0;
     char *seg_start = line;
 
     for (char *p = line; *p; p++) {
@@ -301,16 +308,15 @@ static int split_on_pipe(char *line, char *segs[], int max_seg) {
                 *p = '\0';
                 segs[nseg++] = seg_start;
                 seg_start = p + 1;
-            } else if (!truncated) {
+            } else {
                 fprintf(stderr, RED
                     "myshell: pipeline too long (limit is %d stages)\n"
                     RESET, max_seg);
-                truncated = 1;
+                return -1;
             }
         }
     }
-    if (!truncated)
-        segs[nseg++] = seg_start;
+    segs[nseg++] = seg_start;
     return nseg;
 }
 
@@ -325,6 +331,8 @@ static int parse_pipeline(char *line, Cmd pipeline[MAX_PIPELINE]) {
     memset(pipeline, 0, sizeof(Cmd) * MAX_PIPELINE);
 
     int nseg = split_on_pipe(line, segs, MAX_PIPELINE);
+    if (nseg < 0)
+        return 0;
 
     for (int s = 0; s < nseg; s++) {
         Cmd  *cmd  = &pipeline[stage];
@@ -332,6 +340,14 @@ static int parse_pipeline(char *line, Cmd pipeline[MAX_PIPELINE]) {
         int   ntok = tokenise(segs[s], toks, MAX_ARGS);
 
         if (ntok < 0) {
+            free_pipeline(pipeline, stage);
+            memset(pipeline, 0, sizeof(Cmd) * MAX_PIPELINE);
+            return 0;
+        }
+
+        if (ntok == 0 && nseg > 1) {
+            fprintf(stderr, RED
+                "myshell: syntax error near '|': missing command\n" RESET);
             free_pipeline(pipeline, stage);
             memset(pipeline, 0, sizeof(Cmd) * MAX_PIPELINE);
             return 0;
@@ -597,10 +613,14 @@ static void execute_pipeline(Cmd pipeline[], int n, int background) {
                     name, strerror(errno));
             exit(EXIT_FAILURE);
         } else if (pid > 0) {
-            if (!background)
-                waitpid(pid, NULL, 0);
-            else
+            if (!background) {
+                /* Retry on EINTR: Ctrl-C interrupts waitpid but the child
+                   may catch SIGINT and keep running. */
+                while (waitpid(pid, NULL, 0) < 0 && errno == EINTR)
+                    ;
+            } else {
                 printf(YELLOW "[bg] pid %d\n" RESET, (int)pid);
+            }
         } else {
             perror("fork");
         }
@@ -620,7 +640,14 @@ static void execute_pipeline(Cmd pipeline[], int n, int background) {
     pid_t pids[MAX_PIPELINE];
 
     for (int i = 0; i < n - 1; i++) {
-        if (pipe(pipes[i]) < 0) { perror("pipe"); return; }
+        if (pipe(pipes[i]) < 0) {
+            perror("pipe");
+            for (int j = 0; j < i; j++) {
+                close(pipes[j][0]);
+                close(pipes[j][1]);
+            }
+            return;
+        }
     }
 
     for (int i = 0; i < n; i++) {
@@ -657,8 +684,12 @@ static void execute_pipeline(Cmd pipeline[], int n, int background) {
     }
 
     if (!background) {
-        for (int i = 0; i < n; i++)
-            if (pids[i] > 0) waitpid(pids[i], NULL, 0);
+        for (int i = 0; i < n; i++) {
+            if (pids[i] > 0) {
+                while (waitpid(pids[i], NULL, 0) < 0 && errno == EINTR)
+                    ;
+            }
+        }
     }
 }
 

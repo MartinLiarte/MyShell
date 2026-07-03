@@ -1,0 +1,4 @@
+myshell
+*.o
+*.dSYM/
+.DS_Store

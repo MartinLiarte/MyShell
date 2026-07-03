@@ -44,7 +44,7 @@ The project includes a multi-platform `Makefile` that automatically detects your
 
 ### 1. Clone the repository
 ```bash
-git clone [https://github.com/MartinLiarte/MyShell.git](https://github.com/MartinLiarte/MyShell.git)
+git clone https://github.com/MartinLiarte/MyShell.git
 cd MyShell
 ```
 
@@ -56,7 +56,7 @@ make
 
 *(Optional)* If you want to compile manually using GCC, you **must** link the readline library:
 ```bash
-gcc -Wall -Wextra -Wpedantic -std=c11 myshell.c -o myshell -lreadline
+gcc -Wall -Wextra -Wpedantic -std=c11 MyShell.c -o myshell -lreadline
 ```
 
 ### 3. Run
@@ -77,7 +77,7 @@ To maintain architectural simplicity, certain static thresholds are set:
 ```bash
 make clean
 ```
-Removes the compiled binary and object files.
+Removes the compiled binary.
 
 ---
 ## Example Usage
@@ -88,8 +88,8 @@ MyShell(Desktop)> cat file.txt | grep Hello
 Hello world
 
 MyShell(Desktop)> export PROJECT=MyShell
-MyShell(Desktop)> echo "Working on $PROJECT inside ~"
-Working on MyShell inside /Users/martin
+MyShell(Desktop)> echo "Working on $PROJECT" from ~
+Working on MyShell from /Users/martin
 
 MyShell(Desktop)> cd -
 /Users/martin/PreviousFolder

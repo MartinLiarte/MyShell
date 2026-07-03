@@ -1,7 +1,7 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -Wpedantic -std=c11 -g
+CFLAGS  = -Wall -Wextra -Wpedantic -std=c11 -O2 -g
 TARGET  = myshell
-SRC     = myshell.c
+SRC     = MyShell.c
 
 # ── Detect readline flavour ───────────────────────────────────────────────
 # On macOS, prefer Homebrew's GNU readline if available; fall back to libedit.
